@@ -10,7 +10,7 @@ Implementar sistema de autenticación completo en el microservicio `auth-ms` uti
 - **bcrypt** para hasheo de contraseñas
 
 ## Estado Actual
-**Estado:** Aprobado
+**Estado:** Implementado
 Proyecto scaffold de NestJS 12 con:
 - Módulos auth vacíos (controller, service, module sin lógica)
 - Sin base de datos configurada
