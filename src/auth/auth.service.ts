@@ -3,8 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
-import { Role, Prisma } from '@prisma/client';
+import { Role, Prisma, User } from '@prisma/client';
 import { UserPayload } from './interfaces/user-payload.interface';
+
+// Tipo para usuario autenticado (sin password)
+export type AuthenticatedUser = Omit<User, 'password'>;
 
 // Hash ficticio usado para igualar el tiempo de respuesta cuando el email no existe,
 // evitando la enumeración de usuarios por timing attack.
@@ -57,7 +60,7 @@ export class AuthService {
     }
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<AuthenticatedUser | null> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -83,7 +86,7 @@ export class AuthService {
     return result;
   }
 
-  async login(user: any) {
+  async login(user: AuthenticatedUser) {
     const payload: UserPayload = {
       userId: user.id,
       email: user.email,

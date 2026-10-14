@@ -3,6 +3,15 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UserPayload } from './interfaces/user-payload.interface';
+
+interface RequestWithUser {
+  user: import('./auth.service').AuthenticatedUser;
+}
+
+interface RequestWithPayload {
+  user: UserPayload;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -17,13 +26,13 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Request() req: any) {
+  async login(@Request() req: RequestWithUser) {
     return this.authService.login(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Request() req: any) {
+  async getProfile(@Request() req: RequestWithPayload) {
     return this.authService.getProfile(req.user.userId);
   }
 }
