@@ -6,6 +6,11 @@ import { RegisterDto } from './dto/register.dto';
 import { Role } from '@prisma/client';
 import { UserPayload } from './interfaces/user-payload.interface';
 
+// Hash ficticio usado para igualar el tiempo de respuesta cuando el email no existe,
+// evitando la enumeración de usuarios por timing attack.
+const DUMMY_HASH =
+  '$2b$10$Pnuo.4Y3/JIYvFeWvppS1emeAKd4btXrPkGMtRhIFXYUsaLG4wtlm';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -55,6 +60,8 @@ export class AuthService {
     });
 
     if (!user) {
+      // Comparación ficticia para mantener el mismo tiempo de respuesta
+      await bcrypt.compare(password, DUMMY_HASH);
       return null;
     }
 
