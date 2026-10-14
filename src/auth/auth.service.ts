@@ -58,6 +58,10 @@ export class AuthService {
       return null;
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account has been deactivated');
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -101,6 +105,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account has been deactivated');
     }
 
     return user;
