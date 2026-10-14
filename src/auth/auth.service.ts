@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
-import { Role } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
 import { UserPayload } from './interfaces/user-payload.interface';
 
 // Hash ficticio usado para igualar el tiempo de respuesta cuando el email no existe,
@@ -19,44 +19,48 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, name } = registerDto;
-
-    // Verificar si el email ya existe
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
+    const { password, name } = registerDto;
+    const email = registerDto.email.trim().toLowerCase();
 
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Crear usuario con rol CUSTOMER por defecto
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        roles: [Role.CUSTOMER],
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        roles: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+    // El catch de P2002 es la defensa real contra la condición de carrera
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          roles: [Role.CUSTOMER],
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          roles: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
 
-    return user;
+      return user;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Email already exists');
+      }
+      throw error;
+    }
   }
 
   async validateUser(email: string, password: string): Promise<any> {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
